@@ -1,3 +1,5 @@
+version: "3.9"
+
 x-bot-base: &bot-base
   build:
     context: ./bot
@@ -22,7 +24,7 @@ services:
     networks:
       vps-net:
         ipv4_address: ${OFFICE_HELPER_IP}
-        mac_address: ${OFFICE_HELPER_MAC}
+        mac_address:  ${OFFICE_HELPER_MAC}
 
   bot-office-tester:
     <<: *bot-base
@@ -35,13 +37,13 @@ services:
     networks:
       vps-net:
         ipv4_address: ${OFFICETESTER_IP}
-        mac_address: ${OFFICETESTER_MAC}
+        mac_address:  ${OFFICETESTER_MAC}
 
 networks:
   vps-net:
-    driver: ${NETWORK_DRIVER}
+    driver: macvlan
     driver_opts:
-      parent: ${PARENT_INTERFACE}
+      parent: enp10s0     
     ipam:
       driver: default
       config:
