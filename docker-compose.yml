@@ -1,3 +1,5 @@
+version: "3.9"
+
 x-bot-base: &bot-base
   build:
     context: ./bot
@@ -20,6 +22,7 @@ services:
       - ./users/office365/office-helper:/data:rw
       - ./users/office365:/shared:rw
     networks:
+      default: {}
       vps-net:
         ipv4_address: ${OFFICE_HELPER_IP}
         mac_address:  ${OFFICE_HELPER_MAC}
@@ -33,15 +36,19 @@ services:
       - ./users/office365/officetester:/data:rw
       - ./users/office365:/shared:rw
     networks:
+      default: {}
       vps-net:
         ipv4_address: ${OFFICETESTER_IP}
         mac_address:  ${OFFICETESTER_MAC}
+
+default:
+  driver: bridge
 
 networks:
   vps-net:
     driver: macvlan
     driver_opts:
-      parent: enp10s0     
+      parent: enp10s0
     ipam:
       driver: default
       config:
