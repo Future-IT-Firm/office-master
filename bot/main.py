@@ -44,7 +44,12 @@ async def notify_admins(sender, text):
 
 @dp.message(Command('start'))
 async def start_cmd(m: Message):
-    await m.answer("Welcome! /upload_data, /upload_main, /run")
+    await m.answer(
+        "Welcome!\n"
+        "Use /upload_data to upload your data.txt file.\n"
+        "Use /run to start processing.\n"
+    )
+
 
 @dp.message(Command('upload_data'))
 async def upload_data(m: Message, state: FSMContext):
@@ -91,7 +96,6 @@ async def worker():
     while True:
         uid = await task_queue.get()
         try:
-            # Use shared storage directory for all users
             out_dir = storage_root
             out_dir.mkdir(exist_ok=True, parents=True)
 
@@ -107,18 +111,21 @@ async def worker():
             await bot.send_message(uid, 'Running uploader...')
             await run_uploader(data_root / 'data.txt', out_dir, WORKERS_PER_ACCOUNT, BATCH_SIZE)
 
-            await bot.send_message(uid, 'Done')
+
+            success_path = Path('success.txt')
+            failed_path  = Path('failed.txt')
+
+            success_text = success_path.read_text().strip() if success_path.exists() else "(no successes)"
+            failed_text  = failed_path.read_text().strip()  if failed_path.exists()  else "(no failures)"
+
+            report = (
+                f"✅ Successes:\n{success_text}\n\n"
+                f"❌ Failures:\n{failed_text}"
+            )
+            await bot.send_message(uid, report)
+
         except Exception as e:
             logging.error(e)
             await bot.send_message(uid, f'Error: {e}')
         finally:
             task_queue.task_done()
-
-async def on_startup():
-    await bot.delete_webhook(drop_pending_updates=True)
-    for _ in range(2):
-        asyncio.create_task(worker())
-
-if __name__ == '__main__':
-    dp.startup.register(on_startup)
-    asyncio.run(dp.start_polling(bot))
