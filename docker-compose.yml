@@ -1,0 +1,45 @@
+services:
+  bot-office-helper:
+    build:
+      context: ./bot
+      dockerfile: Dockerfile
+    image: ms-helper-bot:prod
+    container_name: bot-office-helper
+    env_file:
+      - ./envs/office365.env
+    volumes:
+      - ./users/office365/office-helper:/data:rw
+      - ./users/office365:/shared:rw
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pgrep -f main.py || exit 1"]
+      interval: 1m
+      timeout: 10s
+      retries: 3
+    networks:
+      bot-net:
+        ipv4_address: 192.168.100.11
+        mac_address: 02:42:c0:a8:64:0b
+
+    # deploy:
+    #   resources:
+    #     limits:
+    #       cpus: "0.50"
+    #       memory: 512M
+    #     reservations:
+    #       cpus: "0.25"
+    #       memory: 256M
+
+networks:
+  bot-net:
+    driver: macvlan
+    driver_opts:
+      parent: eth0
+    ipam:
+      driver: default
+      config:
+        - subnet: 192.168.100.0/24
+          ip_range: 192.168.100.128/25
+          gateway: 192.168.100.1
+    attachable: true
+    internal: false
