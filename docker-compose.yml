@@ -1,45 +1,50 @@
+x-bot-base: &bot-base
+  build:
+    context: ./bot
+    dockerfile: Dockerfile
+  image: ms-helper-bot:prod
+  restart: unless-stopped
+  healthcheck:
+    test: ["CMD-SHELL", "pgrep -f main.py || exit 1"]
+    interval: 1m
+    timeout: 10s
+    retries: 3
+
 services:
   bot-office-helper:
-    build:
-      context: ./bot
-      dockerfile: Dockerfile
-    image: ms-helper-bot:prod
+    <<: *bot-base
     container_name: bot-office-helper
     env_file:
       - ./envs/office365.env
     volumes:
       - ./users/office365/office-helper:/data:rw
       - ./users/office365:/shared:rw
-    restart: unless-stopped
-    healthcheck:
-      test: ["CMD-SHELL", "pgrep -f main.py || exit 1"]
-      interval: 1m
-      timeout: 10s
-      retries: 3
     networks:
-      bot-net:
-        ipv4_address: 192.168.100.11
-        mac_address: 02:42:c0:a8:64:0b
+      vps-net:
+        ipv4_address: ${OFFICE_HELPER_IP}
+        mac_address: ${OFFICE_HELPER_MAC}
 
-    # deploy:
-    #   resources:
-    #     limits:
-    #       cpus: "0.50"
-    #       memory: 512M
-    #     reservations:
-    #       cpus: "0.25"
-    #       memory: 256M
+  bot-office-tester:
+    <<: *bot-base
+    container_name: bot-office-tester
+    env_file:
+      - ./envs/officetester.env
+    volumes:
+      - ./users/office365/officetester:/data:rw
+      - ./users/office365:/shared:rw
+    networks:
+      vps-net:
+        ipv4_address: ${OFFICETESTER_IP}
+        mac_address: ${OFFICETESTER_MAC}
 
 networks:
-  bot-net:
-    driver: macvlan
+  vps-net:
+    driver: ${NETWORK_DRIVER}
     driver_opts:
-      parent: eth0
+      parent: ${PARENT_INTERFACE}
     ipam:
       driver: default
       config:
-        - subnet: 192.168.100.0/24
-          ip_range: 192.168.100.128/25
-          gateway: 192.168.100.1
-    attachable: true
-    internal: false
+        - subnet:   ${SUBNET}
+          gateway:  ${GATEWAY}
+          ip_range: ${IP_RANGE}

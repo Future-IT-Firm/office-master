@@ -91,7 +91,8 @@ async def worker():
     while True:
         uid = await task_queue.get()
         try:
-            out_dir = storage_root / str(uid)
+            # Use shared storage directory for all users
+            out_dir = storage_root
             out_dir.mkdir(exist_ok=True, parents=True)
 
             lines = (data_root / 'data.txt').read_text().splitlines()
