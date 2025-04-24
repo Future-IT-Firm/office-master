@@ -40,15 +40,14 @@ services:
       vps-net:
         ipv4_address: ${OFFICETESTER_IP}
         mac_address:  ${OFFICETESTER_MAC}
-
-default:
-  driver: bridge
-
 networks:
+  default:
+    driver: bridge
+
   vps-net:
     driver: macvlan
     driver_opts:
-      parent: enp10s0
+      parent: enp10s0.10  # <- Update this to match your VLAN interface
     ipam:
       driver: default
       config:
