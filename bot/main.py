@@ -129,3 +129,14 @@ async def worker():
             await bot.send_message(uid, f'Error: {e}')
         finally:
             task_queue.task_done()
+
+
+
+async def on_startup():
+    await bot.delete_webhook(drop_pending_updates=True)
+    for _ in range(2):
+        asyncio.create_task(worker())
+
+if __name__ == '__main__':
+    dp.startup.register(on_startup)
+    asyncio.run(dp.start_polling(bot))
