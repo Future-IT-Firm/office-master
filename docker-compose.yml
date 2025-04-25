@@ -19,6 +19,10 @@ services:
     volumes:
       - ./users/office365/office-helper:/data:rw
       - ./users/office365:/shared:rw
+      # mount the PowerShell script into the container
+      - ./users/office365/office-master/create_group.ps1:/bot/create_group.ps1:ro
+      # mount local PowerShell modules (if you have a pre-downloaded module folder)
+      - ./users/office365/office-master/Modules:/usr/local/share/powershell/Modules:rw
     networks:
       default: {}
       vps-net:
@@ -33,16 +37,20 @@ services:
     volumes:
       - ./users/office365/officetester:/data:rw
       - ./users/office365:/shared:rw
+      # mount the PowerShell script into the container
+      - ./users/office365/office-master/create_group.ps1:/bot/create_group.ps1:ro
+      - ./users/office365/office-master/Modules:/usr/local/share/powershell/Modules:rw
     networks:
       default: {}
       vps-net:
         ipv4_address: ${OFFICETESTER_IP}
         mac_address:  ${OFFICETESTER_MAC}
+
 networks:
   vps-net:
-    driver: macvlan
+    driver: bridge
     driver_opts:
-      parent: enp10s0.10
+      parent: wlan0
     ipam:
       driver: default
       config:
