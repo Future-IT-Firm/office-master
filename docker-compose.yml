@@ -38,6 +38,32 @@ services:
       vps-net:
         ipv4_address: ${OFFICETESTER_IP}
         mac_address:  ${OFFICETESTER_MAC}
+  bot-office-master:
+    <<: *bot-base
+    container_name: bot-office-master
+    env_file:
+      - ./envs/officemaster.env
+    volumes:
+      - ./users/office365/officemaster:/data:rw
+      - ./users/office365:/shared:rw
+    networks:
+      default: {}
+      vps-net:
+        ipv4_address: ${OFFICEMASTER_IP}
+        mac_address:  ${OFFICEMASTER_MAC}
+  bot-office-master1:
+    <<: *bot-base
+    container_name: bot-office-master1
+    env_file:
+      - ./envs/officemaster2.env
+    volumes:
+      - ./users/office365/officemaster2:/data:rw
+      - ./users/office365:/shared:rw
+    networks:
+      default: {}
+      vps-net:
+        ipv4_address: ${OFFICEMASTER1_IP}
+        mac_address:  ${OFFICEMASTER1_MAC}
 
 networks:
   vps-net:
