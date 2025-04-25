@@ -58,7 +58,6 @@ async def create_user(access_token: str, email: str, domain: str, session: httpx
         if resp.status_code == 201:
             logging.info(f"Created {email}")
             return True
-        # read .text property; do not call it
         body = resp.text
         if 'Directory_QuotaExceeded' in body:
             logging.warning(f"Quota exceeded for {email}")
@@ -104,7 +103,6 @@ async def process_user_creation(record: str, storage_dir: Path, workers: int, se
         if result is True:
             total_created += 1
         elif result is False:
-            # stop on quota exceeded
             break
 
     with open('success.txt', 'a', encoding='utf-8') as f:

@@ -1,9 +1,9 @@
 param(
-    [string]$DataFile    = "/data/data.txt",
+    [string]$DataFile    = "/data/group.txt",
     [string]$StorageDir  = "/shared/storage",
     [int]   $GroupsPer   = 10,
     [string]$GroupPrefix = 'new_batch',
-    [string]$OutputLog   = "/shared/creation_log.txt"
+    [string]$OutputLog   = "/data/creation_log.txt"
 )
 
 Install-Module ExchangeOnlineManagement -Force -Scope CurrentUser | Out-Null
@@ -24,7 +24,6 @@ function Login-User {
         Connect-ExchangeOnline -Credential $cred -ShowBanner:$false -ErrorAction Stop
         return $true
     } catch {
-        # use braced variable to avoid parser confusion with colon
         Write-Warning "Login failed for ${UPN}: $($_.Exception.Message)"
         return $false
     }

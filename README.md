@@ -19,3 +19,8 @@ OFFICETESTER_MAC=02:42:ac:14:00:0c
 ```
 
 
+## TODO
+
+- [ ] /get_storage_dir
+- [ ] /flush users.txt, group.txt, data.txt #bot level clearation(data mount)
+- [ ] /flush_all users.txt, group.txt, data.txt, storage_dir #system level creation (shared mount+data mount)

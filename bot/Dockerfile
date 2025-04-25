@@ -1,20 +1,18 @@
-FROM python:3.11-slim
+FROM mcr.microsoft.com/dotnet/sdk:8.0 AS base
 
-ENV PYTHONUNBUFFERED=1 \
-    PYTHONDONTWRITEBYTECODE=1
+ENV POWERSHELL_TELEMETRY_OPTOUT=1
 
-# Install dependencies and PowerShell for ARM64
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends wget zlib1g ca-certificates libc6 libgcc-s1 liblttng-ust1 libssl3 libstdc++6 libunwind8 ca-certificates libicu-dev && wget https://github.com/PowerShell/PowerShell/releases/download/v7.5.1/powershell-7.5.1-linux-arm64.tar.gz && mkdir -p /opt/microsoft/powershell/7 && tar -xzf powershell-7.5.1-linux-arm64.tar.gz -C /opt/microsoft/powershell/7 && ln -s /opt/microsoft/powershell/7/pwsh /usr/bin/pwsh
+    && apt-get install -y --no-install-recommends \
+        python3 python3-pip curl \
+    && ln -sf /usr/bin/python3 /usr/bin/python \
+    && rm -rf /var/lib/apt/lists/*
+
 WORKDIR /app
+RUN pip3 install httpx msal aiogram --break-system-packages
 
-# Install Python dependencies
-RUN pip3 install --no-cache-dir httpx msal aiogram
-
-# Copy application code
 COPY . .
 
-# Prepare entrypoint and data dirs
 RUN chmod +x entrypoint.sh \
     && mkdir -p /data /shared/storage
 
