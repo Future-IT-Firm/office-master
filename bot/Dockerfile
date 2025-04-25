@@ -11,9 +11,7 @@ RUN apt-get update && \
         gnupg && \
     wget -q https://github.com/PowerShell/PowerShell/releases/download/v7.5.1/powershell_7.5.1-1.deb_amd64.deb && \
     dpkg -i powershell_7.5.1-1.deb_amd64.deb || true && \
-    apt-get install -f -y && \
-    rm powershell_7.5.1-1.deb_amd64.deb && \
-    apt-get clean && rm -rf /var/lib/apt/lists/*
+    apt-get install -f -y && \ echo "pwsh" && aptt install powershell
 
 WORKDIR /app
 
