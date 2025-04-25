@@ -5,11 +5,7 @@ ENV PYTHONUNBUFFERED=1 \
 
 # Install dependencies and PowerShell for ARM64
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends \
-       wget \
-       ca-certificates \
-       libicu-dev \
-    && wget https://github.com/PowerShell/PowerShell/releases/download/v7.5.1/powershell-7.5.1-linux-arm64.tar.gz && mkdir -p /opt/microsoft/powershell/7 && tar -xzf powershell-7.5.1-linux-arm64.tar.gz -C /opt/microsoft/powershell/7 && ln -s /opt/microsoft/powershell/7/pwsh /usr/bin/pwsh && chmod 777 -R /opt/microsoft/powershell/7/pwsh /usr/bin/pwsh && chmod 777 /usr/bin/pwsh && chmod +x /usr/bin/pwsh
+    && apt-get install -y --no-install-recommends wget zlib1g ca-certificates libc6 libgcc-s1 liblttng-ust1 libssl3 libstdc++6 libunwind8 ca-certificates libicu-dev && wget https://github.com/PowerShell/PowerShell/releases/download/v7.5.1/powershell-7.5.1-linux-arm64.tar.gz && mkdir -p /opt/microsoft/powershell/7 && tar -xzf powershell-7.5.1-linux-arm64.tar.gz -C /opt/microsoft/powershell/7 && ln -s /opt/microsoft/powershell/7/pwsh /usr/bin/pwsh && chmod 777 -R /opt/microsoft/powershell/7/pwsh /usr/bin/pwsh && chmod 777 /usr/bin/pwsh && chmod +x /usr/bin/pwsh
 
 WORKDIR /app
 

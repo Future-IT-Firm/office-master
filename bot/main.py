@@ -100,10 +100,14 @@ async def worker():
     while True:
         uid = await task_queue.get()
         try:
-            proc = await asyncio.create_subprocess_exec(
-                'pwsh', '-File', str(PS_SCRIPT), 
-                stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE
-            )
+                proc = await asyncio.create_subprocess_exec(
+                    '/opt/microsoft/powershell/7/pwsh', '-File', str(PS_SCRIPT), 
+                    stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE
+                )
+        except FileNotFoundError:
+            await bot.send_message(uid, "❌ PowerShell executable not found.")
+            task_queue.task_done()
+            continue
             out, err = await proc.communicate()
             if LOG_FILE.exists():
                 txt = LOG_FILE.read_text()
