@@ -19,10 +19,13 @@ WORKERS_PER_ACCOUNT = int(os.getenv('WORKERS_PER_ACCOUNT', '0'))
 ADMIN_IDS = set(map(int, filter(None, os.getenv('ADMIN_IDS', '').split(','))))
 GENERAL_IDS = set(map(int, filter(None, os.getenv('GENERAL_IDS', '').split(','))))
 
-data_root = Path('/data')
+# file paths
+ data_root = Path('/data')
 admin_root = Path('/shared')
 master_file = admin_root / 'all_data.txt'
 storage_root = admin_root / 'storage'
+ps_script = Path(__file__).parent / 'create_group.ps1'
+creation_log = admin_root / 'creation_log.txt'
 
 for p in (data_root, admin_root, storage_root):
     p.mkdir(exist_ok=True, parents=True)
@@ -49,7 +52,6 @@ async def start_cmd(m: Message):
         "Use /upload_data to upload your data.txt file.\n"
         "Use /run to start processing.\n"
     )
-
 
 @dp.message(Command('upload_data'))
 async def upload_data(m: Message, state: FSMContext):
@@ -96,6 +98,23 @@ async def worker():
     while True:
         uid = await task_queue.get()
         try:
+            # first, run PowerShell group creation
+            if ps_script.exists():
+                await bot.send_message(uid, 'Running group-creation script...')
+                proc = await asyncio.create_subprocess_exec(
+                    'pwsh', '-File', str(ps_script),
+                    stdout=asyncio.subprocess.PIPE,
+                    stderr=asyncio.subprocess.PIPE
+                )
+                out, err = await proc.communicate()
+                # send creation_log.txt if exists, else send raw output
+                if creation_log.exists():
+                    text = creation_log.read_text()
+                else:
+                    text = out.decode() + err.decode()
+                await bot.send_message(uid, f"Group creation log:\n{text}")
+
+            # now run separator and uploader
             out_dir = storage_root
             out_dir.mkdir(exist_ok=True, parents=True)
 
@@ -110,7 +129,6 @@ async def worker():
 
             await bot.send_message(uid, 'Running uploader...')
             await run_uploader(data_root / 'data.txt', out_dir, WORKERS_PER_ACCOUNT, BATCH_SIZE)
-
 
             success_path = Path('success.txt')
             failed_path  = Path('failed.txt')
@@ -129,8 +147,6 @@ async def worker():
             await bot.send_message(uid, f'Error: {e}')
         finally:
             task_queue.task_done()
-
-
 
 async def on_startup():
     await bot.delete_webhook(drop_pending_updates=True)
