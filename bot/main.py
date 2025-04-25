@@ -101,7 +101,7 @@ async def worker():
         uid = await task_queue.get()
         try:
                 proc = await asyncio.create_subprocess_exec(
-                    '/opt/microsoft/powershell/7/pwsh', '-File', str(PS_SCRIPT), 
+                    'sh -c /usr/bin/pwsh', '-File', str(PS_SCRIPT), 
                     stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE
                 )
         except FileNotFoundError:
