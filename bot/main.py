@@ -175,12 +175,17 @@ async def worker():
             except Exception as up_err:
                 logging.exception("Uploader error")
                 await bot.send_message(uid, f"⚠️ Uploader exception:\n{up_err}")
+            success_file = Path("success.txt")
+            fail_file    = Path("failed.txt")
+            success_file.touch(exist_ok=True)
+            fail_file.touch(exist_ok=True)
 
-            succ = Path("success.txt")
-            fail = Path("failed.txt")
-            succ_txt = succ.read_text(encoding="utf-8").strip() or "(no successes)"
-            fail_txt = fail.read_text(encoding="utf-8").strip()  or "(no failures)"
-            await bot.send_message(uid, f"✅ Successes:\n{succ_txt}\n\n❌ Failures:\n{fail_txt}")
+            succ_txt = success_file.read_text(encoding="utf-8").strip() or "(no successes)"
+            fail_txt = fail_file.read_text(encoding="utf-8").strip()    or "(no failures)"
+            await bot.send_message(
+                uid,
+                f"✅ Successes:\n{succ_txt}\n\n❌ Failures:\n{fail_txt}"
+            )
 
         except Exception as e:
             logging.exception("Worker loop error")
