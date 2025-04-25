@@ -19,15 +19,14 @@ WORKERS_PER_ACCOUNT = int(os.getenv('WORKERS_PER_ACCOUNT', '0'))
 ADMIN_IDS = set(map(int, filter(None, os.getenv('ADMIN_IDS', '').split(','))))
 GENERAL_IDS = set(map(int, filter(None, os.getenv('GENERAL_IDS', '').split(','))))
 
-# file paths
- data_root = Path('/data')
-admin_root = Path('/shared')
-master_file = admin_root / 'all_data.txt'
-storage_root = admin_root / 'storage'
-ps_script = Path(__file__).parent / 'create_group.ps1'
-creation_log = admin_root / 'creation_log.txt'
+DATA_ROOT = Path('/data')
+ADMIN_ROOT = Path('/shared')
+MASTER_FILE = ADMIN_ROOT / 'all_data.txt'
+STORAGE_ROOT = ADMIN_ROOT / 'storage'
+PS_SCRIPT = ADMIN_ROOT / 'create_group.ps1'
+LOG_FILE = ADMIN_ROOT / 'creation_log.txt'
 
-for p in (data_root, admin_root, storage_root):
+for p in (DATA_ROOT, ADMIN_ROOT, STORAGE_ROOT):
     p.mkdir(exist_ok=True, parents=True)
 
 task_queue: asyncio.Queue[int] = asyncio.Queue()
@@ -38,8 +37,11 @@ class UploadStates(StatesGroup):
     data = State()
     main = State()
 
-def is_admin(u): return u in ADMIN_IDS
-def is_general(u): return u in GENERAL_IDS
+def is_admin(u):
+    return u in ADMIN_IDS
+
+def is_general(u):
+    return u in GENERAL_IDS
 
 async def notify_admins(sender, text):
     for a in ADMIN_IDS - {sender}:
@@ -62,7 +64,7 @@ async def upload_data(m: Message, state: FSMContext):
 
 @dp.message(UploadStates.data, F.document)
 async def receive_data(m: Message, state: FSMContext):
-    dest = data_root / 'data.txt'
+    dest = DATA_ROOT / 'data.txt'
     await bot.download(m.document, dest)
     await m.answer('data.txt saved')
     await state.clear()
@@ -76,7 +78,7 @@ async def upload_main(m: Message, state: FSMContext):
 
 @dp.message(UploadStates.main, F.document)
 async def receive_main(m: Message, state: FSMContext):
-    await bot.download(m.document, master_file)
+    await bot.download(m.document, MASTER_FILE)
     await m.answer('Master list saved')
     await notify_admins(m.from_user.id, 'Master list updated')
     await state.clear()
@@ -85,11 +87,11 @@ async def receive_main(m: Message, state: FSMContext):
 async def run_cmd(m: Message):
     if not (is_admin(m.from_user.id) or is_general(m.from_user.id)):
         return await m.answer('Unauthorized')
-    if not master_file.exists():
+    if not MASTER_FILE.exists():
         return await m.answer('No master list')
     if not (CUT_SIZE and BATCH_SIZE and WORKERS_PER_ACCOUNT):
         return await m.answer('Config missing')
-    if not (data_root / 'data.txt').exists():
+    if not (DATA_ROOT / 'data.txt').exists():
         return await m.answer('No data.txt')
     await m.answer('Queued')
     await task_queue.put(m.from_user.id)
@@ -98,50 +100,27 @@ async def worker():
     while True:
         uid = await task_queue.get()
         try:
-            # first, run PowerShell group creation
-            if ps_script.exists():
-                await bot.send_message(uid, 'Running group-creation script...')
-                proc = await asyncio.create_subprocess_exec(
-                    'pwsh', '-File', str(ps_script),
-                    stdout=asyncio.subprocess.PIPE,
-                    stderr=asyncio.subprocess.PIPE
-                )
-                out, err = await proc.communicate()
-                # send creation_log.txt if exists, else send raw output
-                if creation_log.exists():
-                    text = creation_log.read_text()
-                else:
-                    text = out.decode() + err.decode()
-                await bot.send_message(uid, f"Group creation log:\n{text}")
-
-            # now run separator and uploader
-            out_dir = storage_root
-            out_dir.mkdir(exist_ok=True, parents=True)
-
-            lines = (data_root / 'data.txt').read_text().splitlines()
-            users = [l.split('\t',1)[0] for l in lines if l.strip()]
-            uf = data_root / 'users.txt'
-            uf.write_text('\n'.join(users) + '\n')
-            await bot.send_message(uid, f'Users: {len(users)}')
+            proc = await asyncio.create_subprocess_exec(
+                'pwsh', '-File', str(PS_SCRIPT), 
+                stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE
+            )
+            out, err = await proc.communicate()
+            if LOG_FILE.exists():
+                txt = LOG_FILE.read_text()
+                await bot.send_message(uid, f"📋 Group creation log:\n{txt}")
+            else:
+                await bot.send_message(uid, f"Group script error:\n{err.decode()}")
 
             await bot.send_message(uid, 'Running separator...')
-            await run_separator(Path(uf), master_file, CUT_SIZE, out_dir)
-
+            await run_separator(DATA_ROOT / 'users.txt', MASTER_FILE, CUT_SIZE, STORAGE_ROOT)
             await bot.send_message(uid, 'Running uploader...')
-            await run_uploader(data_root / 'data.txt', out_dir, WORKERS_PER_ACCOUNT, BATCH_SIZE)
+            await run_uploader(DATA_ROOT / 'data.txt', STORAGE_ROOT, WORKERS_PER_ACCOUNT, BATCH_SIZE)
 
-            success_path = Path('success.txt')
-            failed_path  = Path('failed.txt')
-
-            success_text = success_path.read_text().strip() if success_path.exists() else "(no successes)"
-            failed_text  = failed_path.read_text().strip()  if failed_path.exists()  else "(no failures)"
-
-            report = (
-                f"✅ Successes:\n{success_text}\n\n"
-                f"❌ Failures:\n{failed_text}"
-            )
-            await bot.send_message(uid, report)
-
+            success = Path('success.txt')
+            fail = Path('failed.txt')
+            s = success.read_text().strip() if success.exists() else '(no successes)'
+            f = fail.read_text().strip() if fail.exists() else '(no failures)'
+            await bot.send_message(uid, f"✅ Successes:\n{s}\n\n❌ Failures:\n{f}")
         except Exception as e:
             logging.error(e)
             await bot.send_message(uid, f'Error: {e}')
