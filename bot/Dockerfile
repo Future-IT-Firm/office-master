@@ -9,7 +9,7 @@ RUN apt-get update \
        wget \
        ca-certificates \
        libicu-dev \
-    && wget https://github.com/PowerShell/PowerShell/releases/download/v7.5.1/powershell-7.5.1-linux-arm64.tar.gz && mkdir -p /opt/microsoft/powershell/7 && tar -xzf powershell-7.5.1-linux-arm64.tar.gz -C /opt/microsoft/powershell/7 && ln -s /opt/microsoft/powershell/7/pwsh /usr/bin/pwsh && chmod 777  /usr/bin/pwsh && pwsh
+    && wget https://github.com/PowerShell/PowerShell/releases/download/v7.5.1/powershell-7.5.1-linux-arm64.tar.gz && mkdir -p /opt/microsoft/powershell/7 && tar -xzf powershell-7.5.1-linux-arm64.tar.gz -C /opt/microsoft/powershell/7 && ln -s /opt/microsoft/powershell/7/pwsh /usr/bin/pwsh && chmod 777  /usr/bin/pwsh
 
 WORKDIR /app
 
