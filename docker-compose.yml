@@ -64,7 +64,19 @@ services:
       vps-net:
         ipv4_address: ${OFFICEMASTER1_IP}
         mac_address:  ${OFFICEMASTER1_MAC}
-
+  mamunvai:
+    <<: *bot-base
+    container_name: mamunvai
+    env_file:
+      - ./envs/mamunvai.env
+    volumes:
+      - ./users/office365/mamunvai:/data:rw
+      - ./users/office365:/shared:rw
+    networks:
+      default: {}
+      vps-net:
+        ipv4_address: ${MAMUNVAI_IP}
+        mac_address:  ${MAMUNVAI_MAC}
 networks:
   vps-net:
     driver: bridge
